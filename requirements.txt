@@ -1,7 +1,7 @@
 pandas
 numpy
 sqlalchemy
-scikit-learn
-streamlit
+scikit-learn==1.7.1
+streamlit>=1.35.0
 matplotlib
-altair
+altair<5
