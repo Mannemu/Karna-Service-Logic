@@ -50,7 +50,7 @@ view_mode = st.sidebar.radio("Analysnivå", ["Organisatorisk (CSRD)", "Operativ 
 
 st.sidebar.divider()
 
-with st.sidebar.expander("⚖️ Juridiska villkor & Avtal"):
+with st.sidebar.expander(" Juridiska villkor & Avtal"):
     st.markdown("### ANVÄNDARAVTAL")
     st.caption("Senast uppdaterad: April 2026")
     
@@ -92,14 +92,14 @@ else:
 
 st.divider()
 
-# DOWNLOADABLE REPORTS (The missing part) 
+# DOWNLOADABLE REPORTS 
 st.subheader("Compliance Export")
 col_a, col_b = st.columns(2)
 
 with col_a:
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label=f"📥 Download {sector} Raw Data (CSV)",
+        label=f" Download {sector} Raw Data (CSV)",
         data=csv,
         file_name=f"Karna_{sector.replace(' ', '_')}_RawData.csv",
         mime='text/csv',
