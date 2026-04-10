@@ -10,14 +10,13 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-#  PAGE CONFIG & THEME 
+# 1. PAGE CONFIG & THEME 
 st.set_page_config(page_title="Kärna Service Logic | CSRD Compliance", layout="wide")
 
-#  THE BRAIN: GRANULAR INDUSTRY DATA
+# 2. THE BRAIN: DATA GENERATION
 @st.cache_data
 def generate_granular_data(sector):
     dates = pd.date_range(end=datetime.today(), periods=90, freq='D')
-    
     multipliers = {
         "Event Center": {"waste": 45, "overtime_max": 12, "vol": 20000, "staff_base": 160},
         "Hotel (F&B)": {"waste": 30, "overtime_max": 8, "vol": 15000, "staff_base": 160},
@@ -25,9 +24,7 @@ def generate_granular_data(sector):
         "Café/Bistro": {"waste": 10, "overtime_max": 2, "vol": 5000, "staff_base": 160},
         "Fast Food": {"waste": 15, "overtime_max": 4, "vol": 12000, "staff_base": 160}
     }
-    
     m = multipliers.get(sector, multipliers["Restaurant"])
-    
     data = {
         'date': dates,
         'supplier_invoice_sek': np.random.uniform(m['vol']*0.8, m['vol']*1.2, size=90),
@@ -39,31 +36,23 @@ def generate_granular_data(sector):
     }
     return pd.DataFrame(data)
 
-#  SIDEBAR
+# 3. SIDEBAR
 st.sidebar.image("https://img.icons8.com/fluency/96/brain.png", width=50)
 st.sidebar.title("Kärna Service Logic")
-
-sector = st.sidebar.selectbox(
-    "Välj verksamhetstyp", 
-    ["Event Center", "Hotel (F&B)", "Restaurant", "Café/Bistro", "Fast Food"]
-)
-
+sector = st.sidebar.selectbox("Välj verksamhetstyp", ["Event Center", "Hotel (F&B)", "Restaurant", "Café/Bistro", "Fast Food"])
 view_mode = st.sidebar.radio("Analysnivå", ["Organisatorisk (CSRD)", "Operativ (Duty of Care)"])
-
 st.sidebar.divider()
-
-with st.sidebar.expander(" Juridiska villkor & Avtal"):
+with st.sidebar.expander("⚖️ Juridiska villkor & Avtal"):
     st.markdown("### ANVÄNDARAVTAL")
-    st.caption("Senast uppdaterad: April 2026")
     st.info("**Pris:** 199 SEK/mån. **Benchmarking:** Anonymiserad data delas för branschinsikter.")
 
-#  DATA PROCESSING
+# 4. DATA PROCESSING
 df = generate_granular_data(sector)
 financial_leakage = df['supplier_invoice_sek'].sum() * df['ingredient_yield_gap'].mean()
 burnout_risk_count = (df['max_individual_overtime'] > 12).sum()
 total_overtime = df['actual_hours_clocked'].sum() - df['contract_hours'].sum()
 
-#  MAIN DASHBOARD
+# 5. MAIN DASHBOARD
 st.title(f"{sector} | {view_mode}")
 
 # Metrics Row
@@ -78,33 +67,35 @@ with c3:
 with c4:
     st.metric("Leakage (SEK)", f"{financial_leakage:,.0f}", "Yield Gap")
 
-# COMPLIANCE MAPPING 
-with st.expander(" ESRS & Fortnox Data Mapping (Auditor View)"):
+# 6. COMPLIANCE MAPPING (This was missing)
+st.subheader("📂 Compliance & Audit Framework")
+with st.expander("View Fortnox to ESRS Data Mapping"):
     mapping_data = {
         "Fortnox Source": ["4010 (Inköp)", "7010 (Löner)", "Tidrapportering", "Avfallshantering"],
         "ESRS Category": ["E5: Resource Use", "S1: Workforce Impact", "S1: Working Conditions", "E5: Waste Management"],
-        "Audit Logic": ["Line-item Yield Analysis", "Burnout Probability", "Contract vs Actual Delta", "Packaging Benchmarks"]
+        "Audit Logic": ["Line-item Yield Analysis", "Burnout Probability", "Contract vs Actual Delta", "Anonymized Benchmark"]
     }
     st.table(pd.DataFrame(mapping_data))
 
-# EXPORT SECTION
+# 7. EXPORT SECTION (This was missing)
 st.divider()
+st.subheader("📥 Export Audit-Ready Reports")
 col_a, col_b = st.columns([1, 2])
 with col_a:
-    st.subheader("Compliance Export")
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label=f" Download {sector} Audit Report (CSV)",
+        label=f"Download {sector} CSV Report",
         data=csv,
         file_name=f"Karna_{sector.replace(' ', '_')}_Compliance.csv",
         mime='text/csv',
     )
+    st.caption("Standard CSV format for Excel/Audit tools.")
 with col_b:
-    st.dataframe(df.head(5), use_container_width=True)
+    st.dataframe(df.head(3), use_container_width=True)
 
 st.divider()
 
-# VISUALS
+# 8. VISUALS
 if view_mode == "Operativ (Duty of Care)":
     st.subheader("Labor Intensity: Actual Clock-ins vs. Contract")
     st.line_chart(df.set_index('date')[['actual_hours_clocked', 'contract_hours']])
@@ -112,4 +103,4 @@ else:
     st.subheader("Resource Flow vs. Financial Leakage")
     st.area_chart(df.set_index('date')[['waste_kg', 'supplier_invoice_sek']])
 
-st.success(f"Strategy: Closing yield gaps and stabilizing labor hours could recover **{financial_leakage*0.6:,.0f} SEK** annually.")
+st.success(f"Strategy: Closing yield gaps could recover **{financial_leakage*0.6:,.0f} SEK** annually.")
