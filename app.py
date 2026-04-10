@@ -13,12 +13,12 @@ from datetime import datetime
 # PAGE CONFIG & THEME 
 st.set_page_config(page_title="ServiceLogic | CSRD & Gov Compliance", layout="wide")
 
-# THE BRAIN: GENERATING SECTOR-SPECIFIC BENCHMARKS
+# THE BRAIN: GENERATING SECTOR-SPECIFIC BENCHMARKS ---
 @st.cache_data
 def generate_industry_data(sector):
     dates = pd.date_range(end=datetime.today(), periods=90, freq='D')
     
-    # Base logic changes depending on sector for realistic "What-If" scenarios
+    # Baslogik för olika sektorer
     multipliers = {
         "Event Center": {"waste": 45, "overtime": 12, "vol": 20000},
         "Hotel (F&B)": {"waste": 30, "overtime": 8, "vol": 15000},
@@ -27,7 +27,9 @@ def generate_industry_data(sector):
         "Fast Food": {"waste": 15, "overtime": 4, "vol": 12000}
     }
     
-    m = multipliers[sector]
+    # Hanterar matchning mellan svenska/engelska nycklar om det behövs
+    m = multipliers.get(sector, multipliers["Restaurant"])
+    
     data = {
         'date': dates,
         'supplier_invoice_sek': np.random.uniform(m['vol']*0.8, m['vol']*1.2, size=90),
@@ -41,58 +43,62 @@ def generate_industry_data(sector):
 st.sidebar.image("https://img.icons8.com/fluency/96/brain.png", width=50)
 st.sidebar.title("Kärna Service Logic")
 
+# Operativa inställningar
 sector = st.sidebar.selectbox(
-    "Select Establishment Type", 
+    "Välj verksamhetstyp", 
     ["Event Center", "Hotel (F&B)", "Restaurant", "Café/Bistro", "Fast Food"]
 )
 
 establishment_age = st.sidebar.radio("Compliance Category", ["New (Permit Tracking)", "Existing (Legacy Audit)"])
 
-st.sidebar.divider()
-reduction_target = st.sidebar.slider("Waste Reduction Goal (%)", 0, 50, 15)
+reduction_target = st.sidebar.slider("Mål för avfallsminskning (%)", 0, 50, 15)
 
-#  Add the Legal Expander 
-with st.sidebar.expander("⚖️ Juridiska villkor & Avtal"):
+st.sidebar.divider()
+
+# JURIDISKA VILLKOR & AVTAL (Integrerat från PDF och tillägg)
+with st.sidebar.expander(" Juridiska villkor & Avtal"):
     st.markdown("### ANVÄNDARAVTAL")
     st.caption("Senast uppdaterad: April 2026")
     
     st.markdown("""
-    Detta avtal reglerar förhållandet mellan Slutanvändaren och App-utvecklaren (Kärna Service Logic). 
+    Detta Avtal reglerar förhållandet mellan Fortnox kunder ("Slutanvändaren") och Kärna Service Logic ("App-utvecklaren"). 
     Genom att aktivera tjänsten via Fortnox App-market godkänner du nedanstående villkor.
     """)
 
-    st.markdown( KOMPLETTERANDE AVTAL)
+    st.markdown("#### 1. KOMPLETTERANDE VILLKOR")
     st.info("""
-    1. TJÄNSTENS SYFTE
-    Appen är ett verktyg för analys och beslutsstöd. Kärna ansvarar inte för affärsbeslut eller myndighetstvister. Slutanvändaren äger ansvaret för att kontrollera siffror mot originalfakturor i Fortnox innan åtgärd tas.
+    **Beslutsstöd:** Appen är ett verktyg för analys och beslutsstöd. Kärna ansvarar inte för affärsbeslut eller myndighetstvister. Slutanvändaren äger ansvaret för att kontrollera siffror mot originalfakturor i Fortnox innan åtgärd tas.
 
-    2. TILLGÄNGLIGHET & SUPPORT
-    Vi strävar efter hög driftssäkerhet, men planerat underhåll sker söndagar 22:00 – måndagar 04:00. Support ges via e-post helgfria vardagar 09:00 – 17:00.
+    **Tillgänglighet:** Vi strävar efter hög driftssäkerhet, men planerat underhåll sker söndagar 22:00 – måndagar 04:00. Support ges via e-post helgfria vardagar 09:00 – 17:00.
 
-    3. DATA & BENCHMARKING
-    Kärna har rätt att använda anonymiserad data för att skapa branschjämförelser. Inga företagsnamn eller personuppgifter delas någonsin med tredje part eller andra användare.
+    **Benchmarking:** Kärna har rätt att använda anonymiserad data för att skapa branschjämförelser. Inga företagsnamn eller personuppgifter delas någonsin med tredje part eller andra användare.
 
-    4. PRIS & BETALNING
-    Månadsavgift: 199 SEK (exkl. moms). Debiteras via Fortnox. Uppsägning följer Fortnox standardvillkor.
+    **Pris:** Månadsavgift: 199 SEK (exkl. moms). Debiteras via Fortnox. Uppsägning följer Fortnox standardvillkor.
     """)
 
-    st.markdown("#STANDARDVILLKOR (FORTNOX)")
+    st.markdown("#### 2. STANDARDVILLKOR (FORTNOX)")
     st.markdown("""
-    Nyttjanderätt: Slutanvändaren erhåller en icke-exklusiv rätt att använda Appen.
-    Immateriella rättigheter: App-utvecklaren äger samtliga rättigheter till Appen.
-    Ansvar: App-utvecklaren ansvarar ej för indirekta förluster.
-    Uppsägning: Sker senast en (1) månad före nästa fakturering.
+    **Nyttjanderätt:** Slutanvändaren erhåller en icke-exklusiv rätt att använda Appen.
+    
+    **Immateriella rättigheter:** App-utvecklaren äger samtliga rättigheter till Appen.
+    
+    **Ansvar:** App-utvecklaren ansvarar ej för indirekta förluster eller skador på Slutanvändarens system.
+    
+    **Uppsägning:** Sker senast en (1) månad före nästa fakturering via Fortnox.
     """)
+    
+    st.divider()
+    st.caption("Fullständigt juridiskt dokument (PDF) finns tillgängligt via Fortnox App-market.")
 
 # DATA LOADING & CALCULATIONS 
 df = generate_industry_data(sector)
-waste_cost_ratio = 0.18 # Industry standard: 18% of food cost is lost to waste
+waste_cost_ratio = 0.18 # Branschstandard: 18% av matkostnaden går till spillo
 total_waste = df['waste_estimate_kg'].sum()
 financial_leakage = df['supplier_invoice_sek'].sum() * waste_cost_ratio
 projected_savings = financial_leakage * (reduction_target / 100)
 
 # MAIN DASHBOARD 
-st.title(f" {sector} Operations: CSRD & Govt Compliance")
+st.title(f"{sector} Operations: CSRD & Govt Compliance")
 st.markdown(f"**Tracking:** ESRS E5 (Resource Use) & S1 (Workforce) | **Status:** {establishment_age}")
 
 # Metrics Row
@@ -107,12 +113,12 @@ with c3:
 with c4:
     st.metric("Gov Compliance Score", "88%", "Pass")
 
-# VISUALIZATION 
+# VISUALIZATION
 st.subheader("Industry Benchmark Analysis")
 st.area_chart(df.set_index('date')[['waste_estimate_kg', 'staff_overtime_hours']])
 
 # COMPLIANCE MAPPING TABLE
-with st.expander(" Governmental & ESRS Data Mapping"):
+with st.expander("Governmental & ESRS Data Mapping"):
     mapping_data = {
         "Fortnox Code": ["4010", "7010", "7210", "5410"],
         "Gov Standard": ["Livsmedelsverket (Inflow)", "Arbetsmiljöverket", "Arbetsmiljöverket", "Miljöbalken (Waste)"],
@@ -121,7 +127,7 @@ with st.expander(" Governmental & ESRS Data Mapping"):
     }
     st.table(pd.DataFrame(mapping_data))
 
-# EXCEL-FRIENDLY DOWNLOAD 
+# EXCEL DOWNLOAD
 csv_data = df.to_csv(index=False)
 excel_friendly_csv = "sep=,\n" + csv_data
 
@@ -132,4 +138,4 @@ st.download_button(
     mime="text/csv"
 )
 
-st.success(f" Strategy: Reducing waste by {reduction_target}% would recover **{projected_savings:,.0f} SEK** annually.")
+st.success(f"Strategy: Att minska avfallet med {reduction_target}% skulle återvinna **{projected_savings:,.0f} SEK** årligen.")
