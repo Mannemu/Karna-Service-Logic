@@ -11,7 +11,7 @@ import numpy as np
 from datetime import datetime
 
 # 1. PAGE CONFIG (Must be at the very top)
-st.set_page_config(page_title="Kärna Service Logic | A+ CSRD", layout="wide")
+st.set_page_config(page_title="Kärna Service Logic | TEST VERSION 0.1", layout="wide")
 def login_page():
     st.title("Welcome to Kärna Service Logic")
     st.write("The first-mover engine for ESRS & CSRD compliance.")
