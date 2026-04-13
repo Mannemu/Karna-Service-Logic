@@ -12,6 +12,22 @@ from datetime import datetime
 
 # 1. PAGE CONFIG (Must be at the very top)
 st.set_page_config(page_title="Kärna Service Logic | A+ CSRD", layout="wide")
+def login_page():
+    st.title("Welcome to Kärna Service Logic")
+    st.write("The first-mover engine for ESRS & CSRD compliance.")
+    st.divider()
+    
+    # The Connection Button
+    if st.button("Connect with Fortnox", type="primary"):
+        st.session_state.authenticated = True
+        st.rerun()
+    
+    # The GDPR "Trust" Notice
+    st.caption("""
+    **🔒 Data Privacy & GDPR Notice** By connecting, Kärna will receive read-only access to your Fortnox accounting and personal data. 
+    We use this strictly to generate your sustainability insights. No data is modified, 
+    and we never share your information with third parties.
+    """)
 
 # 2. THE SYNC BRAIN (Backend Logic)
 @st.cache_data(ttl=86400) 
