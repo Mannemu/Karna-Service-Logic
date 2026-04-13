@@ -10,10 +10,25 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-# 1. PAGE CONFIG
+# 1Welcome page
+def login_page():
+    st.title("Welcome to Kärna Service Logic")
+    st.write("The first-mover engine for ESRS & CSRD compliance.")
+    
+    if st.button("Connect with Fortnox"):
+        # This triggers the OAuth flow we've discussed
+        st.info("Redirecting to Fortnox for secure authentication...")
+
+# In your main app logic:
+if "authenticated" not in st.session_state:
+    login_page()
+else:
+    run_the_dashboard_code() 
+
+# 2. PAGE CONFIG
 st.set_page_config(page_title="Kärna Service Logic | A+ CSRD", layout="wide")
 
-# 2. THE SYNC BRAIN (Verified Automatic 24h Function)
+# 3. THE SYNC BRAIN (Verified Automatic 24h Function)
 # This stays as a standalone function to ensure the cache stays 100% stable.
 @st.cache_data(ttl=86400) # <--- THIS is your "Automatic Update" lock
 def fetch_and_sync_fortnox_data(sector):
@@ -44,7 +59,7 @@ def fetch_and_sync_fortnox_data(sector):
     df['peer_co2_avg'] = df['co2_tonnes'] * 1.08           
     return df
 
-# 3. SIDEBAR (Matching your new Screenshot)
+# 4. SIDEBAR (Matching your new Screenshot)
 st.sidebar.title("Kärna Service Logic")
 st.sidebar.success("🛡️ Audit-Ready: ESRS Framework Active")
 st.sidebar.info("🔄 Automatic Sync: 24h Cycle Verified") # Keeps users informed
@@ -56,10 +71,10 @@ view_mode = st.sidebar.radio(
     ["🌍 Miljö: Klimat (E1)", "♻️ Miljö: Resurser (E5)", "👥 Socialt: Personal (S1)"]
 )
 
-# 4. DATA TRIGGER
+# 5. DATA TRIGGER
 df = fetch_and_sync_fortnox_data(sector)
 
-# 5. MAIN UI (Separated and Scannable)
+# 6. MAIN UI (Separated and Scannable)
 st.title(f"{sector} | {view_mode}")
 
 # Top Metric Row
@@ -70,7 +85,7 @@ with m3: st.metric("Burnout Incidents (S1)", "0", "Safe")
 
 st.divider()
 
-# 6. SEPARATED ANALYTICS PILLARS
+# 7. SEPARATED ANALYTICS PILLARS
 if view_mode == "🌍 Miljö: Klimat (E1)":
     st.subheader("CO2-avtryck vs. Branschsnitt (Scope 3)")
     # Peer line included for A+ rating
