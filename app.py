@@ -10,31 +10,13 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-# 1Welcome page
-def login_page():
-    st.title("Welcome to Kärna Service Logic")
-    st.write("The first-mover engine for ESRS & CSRD compliance.")
-    
-    if st.button("Connect with Fortnox"):
-        # This triggers the OAuth flow we've discussed
-        st.info("Redirecting to Fortnox for secure authentication...")
-
-# In your main app logic:
-if "authenticated" not in st.session_state:
-    login_page()
-else:
-    run_the_dashboard_code() 
-
-# 2. PAGE CONFIG
+# 1. PAGE CONFIG (Must be at the very top)
 st.set_page_config(page_title="Kärna Service Logic | A+ CSRD", layout="wide")
 
-# 3. THE SYNC BRAIN (Verified Automatic 24h Function)
-# This stays as a standalone function to ensure the cache stays 100% stable.
-@st.cache_data(ttl=86400) # <--- THIS is your "Automatic Update" lock
+# 2. THE SYNC BRAIN (Backend Logic)
+@st.cache_data(ttl=86400) 
 def fetch_and_sync_fortnox_data(sector):
     dates = pd.date_range(end=datetime.today(), periods=90, freq='D')
-    
-    # Sector-specific logic for Carbon, Waste, and Labor
     multipliers = {
         "Event Center": {"waste": 45, "overtime": 12, "vol": 20000, "co2": 1.4},
         "Hotel (F&B)": {"waste": 30, "overtime": 8, "vol": 15000, "co2": 1.1},
@@ -43,7 +25,6 @@ def fetch_and_sync_fortnox_data(sector):
         "Fast Food": {"waste": 15, "overtime": 4, "vol": 12000, "co2": 1.2}
     }
     m = multipliers.get(sector, multipliers["Restaurant"])
-    
     df = pd.DataFrame({
         'date': dates,
         'supplier_invoice_sek': np.random.uniform(m['vol']*0.8, m['vol']*1.2, size=90),
@@ -52,81 +33,73 @@ def fetch_and_sync_fortnox_data(sector):
         'contract_hours': [160] * 90,
         'actual_hours': np.random.uniform(160, 160 + m['overtime']*4, size=90),
     })
-    
-    # CALCULATIONS (Scope 3 + Benchmarking)
     df['co2_tonnes'] = (df['supplier_invoice_sek'] / 1000) * m['co2'] * 0.05
     df['peer_waste_avg'] = df['ingredient_waste_kg'] * 1.12 
     df['peer_co2_avg'] = df['co2_tonnes'] * 1.08           
     return df
 
-# 4. SIDBEBAR I.
-# Navigation in the Sidebar
+# 3. SIDEBAR NAVIGATION
+st.sidebar.title("Kärna Service Logic")
+st.sidebar.success("🛡️ Audit-Ready: ESRS Active")
+st.sidebar.info("🔄 Sync: 24h Cycle Verified")
+
+# Primary Navigation
 page = st.sidebar.radio("Navigation", ["Dashboard", "Support", "Integritetspolicy"])
 
+# 4. PAGE ROUTING (The "Logic Switch")
+
 if page == "Dashboard":
-    st.title("Kärna Service Logic")
-    # Your existing dashboard code goes here...
+    # Authentication Check
+    if "authenticated" not in st.session_state:
+        st.title("Welcome to Kärna Service Logic")
+        st.write("The first-mover engine for ESRS & CSRD compliance.")
+        if st.button("Connect with Fortnox"):
+            st.session_state.authenticated = True
+            st.rerun()
+    else:
+        # ALL DASHBOARD CODE IS INDENTED HERE
+        st.sidebar.markdown("---")
+        sector = st.sidebar.selectbox("Verksamhetstyp", ["Event Center", "Hotel (F&B)", "Restaurant", "Café/Bistro", "Fast Food"])
+        view_mode = st.sidebar.radio("Välj Rapportområde", ["🌍 Miljö: Klimat (E1)", "♻️ Miljö: Resurser (E5)", "👥 Socialt: Personal (S1)"])
+        
+        df = fetch_and_sync_fortnox_data(sector)
+        st.title(f"{sector} | {view_mode}")
+
+        m1, m2, m3 = st.columns(3)
+        with m1: st.metric("Koldioxidavtryck (E1)", f"{df['co2_tonnes'].sum():,.2f} tCO2e")
+        with m2: st.metric("Total Waste (E5)", f"{df['ingredient_waste_kg'].sum() + df['plate_waste_kg'].sum():,.0f} kg")
+        with m3: st.metric("Burnout Incidents (S1)", "0", "Safe")
+        
+        st.divider()
+
+        if view_mode == "🌍 Miljö: Klimat (E1)":
+            st.subheader("CO2-avtryck vs. Branschsnitt")
+            st.line_chart(df.set_index('date')[['co2_tonnes', 'peer_co2_avg']])
+        elif view_mode == "♻️ Miljö: Resurser (E5)":
+            st.subheader("Resursutnyttjande: Inköpt råvara vs. Benchmark")
+            st.area_chart(df.set_index('date')[['ingredient_waste_kg', 'peer_waste_avg']])
+        else:
+            st.subheader("Arbetstidsanalys (Duty of Care)")
+            st.line_chart(df.set_index('date')[['actual_hours', 'contract_hours']])
 
 elif page == "Support":
-    st.title("Support & Integration")
+    # Everything else is hidden when this runs
+    st.title("📞 Support & Integration")
     st.markdown("""
     ### Behöver du hjälp?
     Kärna Service Logic är designad för att vara sömlös, men vi finns här om du har frågor.
     
-    * **E-post:** support@karna.se (or your email)
-    * **Installation:** Aktivera integrationen i Fortnox Marketplace, så synkas din data automatiskt.
-    * **FAQ:** Vår motor mappar automatiskt konton 4000-4010 för resursanalys (E5) och löne-data för personalanalys (S1).
+    * **E-post:** support@karna.se
+    * **Installation:** Aktivera integrationen i Fortnox Marketplace.
+    * **FAQ:** Vi mappar automatiskt 4000-4010 och personal-data.
     """)
 
 elif page == "Integritetspolicy":
-    st.title("Integritetspolicy (Privacy Policy)")
+    st.title("🔒 Integritetspolicy (Privacy Policy)")
     st.write("""
     **Behandling av personuppgifter**
     Kärna Service Logic läser data från Fortnox via säkra API-anrop. 
-    1. **Data som läses:** Bokföringsdata, personaldata och företagsinformation.
-    2. **Syfte:** Att generera ESG-rapporter enligt CSRD/ESRS-standarder.
-    3. **Säkerhet:** Vi lagrar ingen känslig data permanent och skriver aldrig till din bokföring.
+    1. **Data:** Bokföring, personal och företagsinfo.
+    2. **Syfte:** Generera ESG-rapporter (CSRD/ESRS).
+    3. **Säkerhet:** Vi lagrar inget permanent och skriver aldrig till din bokföring.
     """)
-
-# 4. SIDEBAR (Matching your new Screenshot)
-st.sidebar.title("Kärna Service Logic")
-st.sidebar.success("🛡️ Audit-Ready: ESRS Framework Active")
-st.sidebar.info("🔄 Automatic Sync: 24h Cycle Verified") # Keeps users informed
-
-sector = st.sidebar.selectbox("Verksamhetstyp", ["Event Center", "Hotel (F&B)", "Restaurant", "Café/Bistro", "Fast Food"])
-
-view_mode = st.sidebar.radio(
-    "Välj Rapportområde", 
-    ["🌍 Miljö: Klimat (E1)", "♻️ Miljö: Resurser (E5)", "👥 Socialt: Personal (S1)"]
-)
-
-# 5. DATA TRIGGER
-df = fetch_and_sync_fortnox_data(sector)
-
-# 6. MAIN UI (Separated and Scannable)
-st.title(f"{sector} | {view_mode}")
-
-# Top Metric Row
-m1, m2, m3 = st.columns(3)
-with m1: st.metric("Koldioxidavtryck (E1)", f"{df['co2_tonnes'].sum():,.2f} tCO2e")
-with m2: st.metric("Total Waste (E5)", f"{df['ingredient_waste_kg'].sum() + df['plate_waste_kg'].sum():,.0f} kg")
-with m3: st.metric("Burnout Incidents (S1)", "0", "Safe")
-
-st.divider()
-
-# 7. SEPARATED ANALYTICS PILLARS
-if view_mode == "🌍 Miljö: Klimat (E1)":
-    st.subheader("CO2-avtryck vs. Branschsnitt (Scope 3)")
-    # Peer line included for A+ rating
-    st.line_chart(df.set_index('date')[['co2_tonnes', 'peer_co2_avg']])
-    st.caption("Grön: Din data | Grå: Regionalt Benchmark")
-
-elif view_mode == "♻️ Miljö: Resurser (E5)":
-    st.subheader("Resursutnyttjande: Inköpt råvara vs. Benchmark")
-    st.area_chart(df.set_index('date')[['ingredient_waste_kg', 'peer_waste_avg']])
-    st.subheader("Tallrikssvinn (Outflow)")
-    st.bar_chart(df.set_index('date')['plate_waste_kg'])
-
-else: # S1 View
-    st.subheader("Arbetstidsanalys (Duty of Care)")
-    st.line_chart(df.set_index('date')[['actual_hours', 'contract_hours']])
