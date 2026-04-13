@@ -59,6 +59,35 @@ def fetch_and_sync_fortnox_data(sector):
     df['peer_co2_avg'] = df['co2_tonnes'] * 1.08           
     return df
 
+# 4. SIDBEBAR I.
+# Navigation in the Sidebar
+page = st.sidebar.radio("Navigation", ["Dashboard", "Support", "Integritetspolicy"])
+
+if page == "Dashboard":
+    st.title("Kärna Service Logic")
+    # Your existing dashboard code goes here...
+
+elif page == "Support":
+    st.title("Support & Integration")
+    st.markdown("""
+    ### Behöver du hjälp?
+    Kärna Service Logic är designad för att vara sömlös, men vi finns här om du har frågor.
+    
+    * **E-post:** support@karna.se (or your email)
+    * **Installation:** Aktivera integrationen i Fortnox Marketplace, så synkas din data automatiskt.
+    * **FAQ:** Vår motor mappar automatiskt konton 4000-4010 för resursanalys (E5) och löne-data för personalanalys (S1).
+    """)
+
+elif page == "Integritetspolicy":
+    st.title("Integritetspolicy (Privacy Policy)")
+    st.write("""
+    **Behandling av personuppgifter**
+    Kärna Service Logic läser data från Fortnox via säkra API-anrop. 
+    1. **Data som läses:** Bokföringsdata, personaldata och företagsinformation.
+    2. **Syfte:** Att generera ESG-rapporter enligt CSRD/ESRS-standarder.
+    3. **Säkerhet:** Vi lagrar ingen känslig data permanent och skriver aldrig till din bokföring.
+    """)
+
 # 4. SIDEBAR (Matching your new Screenshot)
 st.sidebar.title("Kärna Service Logic")
 st.sidebar.success("🛡️ Audit-Ready: ESRS Framework Active")
