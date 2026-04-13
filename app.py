@@ -16,7 +16,7 @@ def login_page():
     st.title("Welcome to Kärna Service Logic")
     st.write("The first-mover engine for ESRS & CSRD compliance.")
     st.divider()
-    
+
     # The Connection Button
     if st.button("Connect with Fortnox", type="primary"):
         st.session_state.authenticated = True
